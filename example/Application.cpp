@@ -15,6 +15,11 @@
  */
 
 #include "Wolk.h"
+#include "BasicConfigLoader.h"
+#include <qt5/QtWidgets/QApplication>
+#include <qt5/QtCore/QObject>
+#include "MainWindow.h"
+#include "CustomHandler.h"
 
 #include <iostream>
 #include <memory>
@@ -22,37 +27,47 @@
 #include <thread>
 #include <string>
 
-int main(int /* argc */, char** /* argv */)
+int main(int argc, char** argv)
 {
-    wolkabout::Device device("DEVICE_KEY", "DEVICE_PASSWORD", {"ACTUATOR_REFERENCE_ONE", "ACTUATOR_REFERENCE_TWO", "ACTUATOR_REFERENCE_THREE"});
+	QApplication a(argc, argv);
+	MainWindow mainWindow;
+
+	qRegisterMetaType<std::string>("std::string");
+
+	std::string key, password, host;
+
+	if(!example::BasicConfigLoader::load("config", key, password, host))
+	{
+		return -1;
+	}
+
+	std::cout << "key: " << key << ", password: " << password << ", host: " << host << std::endl;
+
+	wolkabout::Device device(key, password, {"MSG"});
+
+	auto customHandler = std::make_shared<example::CustomHandler>();
+	QObject::connect(customHandler.get(), &example::CustomHandler::message, &mainWindow, &MainWindow::setMessage);
+	QObject::connect(&mainWindow, &MainWindow::messageSet, customHandler.get(), &example::CustomHandler::messageSetSuccess);
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
-        .actuationHandler([](const std::string& reference, const std::string& value) -> void {
-            std::cout << "Actuation request received - Reference: " << reference << " value: " << value << std::endl;
-        })
-        .actuatorStatusProvider([](const std::string& reference) -> wolkabout::ActuatorStatus {
-            if (reference == "ACTUATOR_REFERENCE_ONE") {
-                return wolkabout::ActuatorStatus("65", wolkabout::ActuatorStatus::State::READY);
-            } else if (reference == "ACTUATOR_REFERENCE_TWO") {
-                return wolkabout::ActuatorStatus("false", wolkabout::ActuatorStatus::State::READY);
-            }
-
-            return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
-        })
+		.actuationHandler(customHandler)
+		.actuatorStatusProvider(customHandler)
+		.host(host)
         .build();
 
-    wolk->connect();
+	QObject::connect(customHandler.get(), &example::CustomHandler::statusUpdated, [&](std::string ref, wolkabout::ActuatorStatus status){
+		wolk->publishActuatorStatus(ref);
+	});
+
+	wolk->connect();
 
     wolk->addSensorReading("TEMPERATURE_REF", 23.4);
     wolk->addSensorReading("BOOL_SENSOR_REF", true);
 
     wolk->addAlarm("ALARM_REF", "ALARM_MESSAGE_FROM_CONNECTOR");
 
-    while(true)
-    {
-        std::this_thread::sleep_for(std::chrono::milliseconds(200));
-    }
+	mainWindow.show();
 
-    return 0;
+	return a.exec();
 }

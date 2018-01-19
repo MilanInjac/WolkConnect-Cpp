@@ -44,20 +44,30 @@ IF (NOT OPENSSL_INCLUDE_DIR)
             "OpenSSL include dir must be specified with: -DOPENSSL_INCLUDE_DIR=...")
 ENDIF (NOT OPENSSL_INCLUDE_DIR)
 
+set(CMAKE_AUTOUIC ON)
+# Find includes in corresponding build directories
+set(CMAKE_INCLUDE_CURRENT_DIR ON)
+# Instruct CMake to run moc automatically when needed.
+set(CMAKE_AUTOMOC ON)
+
 add_definitions(-DOPENSSL)
 add_subdirectory(mqtt)
 
 # WolkAbout c++ Connector
 include_directories("mqtt")
 include_directories("src")
+include_directories("example")
 
-file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp")
-file(GLOB_RECURSE SOURCE_FILES "src/*.cpp")
+file(GLOB_RECURSE HEADER_FILES "src/*.h" "src/*.hpp" "example/*.h")
+file(GLOB_RECURSE SOURCE_FILES "src/*.cpp" "example/*.cpp" "example/*.ui")
 
 link_directories(${PROJECT_SOURCE_DIR}/out)
 
+find_package(Qt5Widgets)
+find_package(Qt5Core)
+
 add_library(${PROJECT_NAME} SHARED ${HEADER_FILES} ${SOURCE_FILES})
-target_link_libraries(${PROJECT_NAME} paho-mqtt pthread)
+target_link_libraries(${PROJECT_NAME} paho-mqtt pthread Qt5::Widgets Qt5::Core)
 
 add_subdirectory(cmake)
 
