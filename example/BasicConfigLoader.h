@@ -25,6 +25,8 @@ class BasicConfigLoader
 {
 public:
 	static bool load(const std::string& confFile, std::string& key, std::string& password, std::string& host);
+	static bool loadMessage(const std::string& confFile, std::string& message);
+	static bool saveMessage(const std::string& confFile, const std::string& message);
 };
 }
 

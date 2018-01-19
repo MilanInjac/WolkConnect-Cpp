@@ -4,6 +4,8 @@
 #include <QtCore/QObject>
 #include "ActuationHandler.h"
 #include "ActuatorStatusProvider.h"
+#include "BasicConfigLoader.h"
+#include <atomic>
 
 namespace example
 {
@@ -16,9 +18,16 @@ public:
 	{
 		if(reference == "MSG")
 		{
-			m_messageStatus = wolkabout::ActuatorStatus::State::BUSY;
-			m_message = value;
-			emit message(value);
+			if(BasicConfigLoader::saveMessage("config", value))
+			{
+				m_message = value;
+				m_messageStatus = wolkabout::ActuatorStatus::State::BUSY;
+				emit message(value);
+			}
+			else
+			{
+				m_messageStatus = wolkabout::ActuatorStatus::State::ERROR;
+			}
 		}
 	}
 
@@ -53,7 +62,7 @@ public slots:
 	}
 
 private:
-	wolkabout::ActuatorStatus::State m_messageStatus;
+	std::atomic<wolkabout::ActuatorStatus::State> m_messageStatus;
 	std::string m_message;
 };
 

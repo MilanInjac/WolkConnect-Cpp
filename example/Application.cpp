@@ -43,6 +43,12 @@ int main(int argc, char** argv)
 
 	std::cout << "key: " << key << ", password: " << password << ", host: " << host << std::endl;
 
+	std::string message;
+	example::BasicConfigLoader::loadMessage("config", message);
+	std::cout << "message: " << message;
+
+	example::BasicConfigLoader::saveMessage("config", "new test message");
+
 	wolkabout::Device device(key, password, {"MSG"});
 
 	auto customHandler = std::make_shared<example::CustomHandler>();
@@ -61,6 +67,8 @@ int main(int argc, char** argv)
 	});
 
 	wolk->connect();
+
+	customHandler->handleActuation("MSG", message);
 
     wolk->addSensorReading("TEMPERATURE_REF", 23.4);
     wolk->addSensorReading("BOOL_SENSOR_REF", true);

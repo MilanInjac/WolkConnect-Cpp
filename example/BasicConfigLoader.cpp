@@ -17,6 +17,7 @@
 #include "BasicConfigLoader.h"
 #include "utilities/FileSystemUtils.h"
 #include "utilities/json.hpp"
+#include <regex>
 
 namespace example
 {
@@ -48,6 +49,61 @@ bool BasicConfigLoader::load(const std::string& confFile, std::string& key, std:
 		}
 
 		return true;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+bool BasicConfigLoader::loadMessage(const std::string& confFile, std::string& message)
+{
+	std::string content;
+	if(!wolkabout::FileSystemUtils::readFileContent(confFile, content))
+	{
+		return false;
+	}
+
+	try
+	{
+		nlohmann::json j = nlohmann::json::parse(content);
+
+		if(j.find("message") != j.end())
+		{
+			message = j.at("message").get<std::string>();
+		}
+
+		return true;
+	}
+	catch (...)
+	{
+		return false;
+	}
+}
+
+bool BasicConfigLoader::saveMessage(const std::string& confFile, const std::string& message)
+{
+	std::string content;
+	if(!wolkabout::FileSystemUtils::readFileContent(confFile, content))
+	{
+		return false;
+	}
+
+	try
+	{
+		std::regex reg(".*\"message\"\\s*:\\s*\"(.*)\".*");
+
+		std::string newMessage = "\"message\":\"";
+		newMessage += message + "\"";
+
+		std::string newContent = std::regex_replace(content, reg, newMessage);
+
+		std::cout << "new config: " << newContent;
+
+		if(wolkabout::FileSystemUtils::createFileWithContent(confFile, newContent))
+		{
+			return true;
+		}
 	}
 	catch (...)
 	{
