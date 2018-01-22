@@ -19,17 +19,49 @@
 
 #include "FirmwareInstaller.h"
 #include <iostream>
+#include <cstdio>
+#include <unistd.h>
+#include <cerrno>
+#include <cstring>
+#include <sys/stat.h>
 
 namespace example
 {
-class Installer: public wolkabout::FirmwareInstaller
+class BasicFirmwareInstaller: public wolkabout::FirmwareInstaller
 {
 public:
+	BasicFirmwareInstaller(int argc, char** argv, char** envp) : m_argc{argc}, m_argv{argv}, m_envp{envp}
+	{
+	}
+
 	bool install(const std::string& firmwareFile) override
 	{
 		std::cout << "Install file " << firmwareFile << std::endl;
-		return true;
+
+		std::cout << m_argv[0];
+
+		unlink(m_argv[0]);
+
+		std::string newExe = std::string(m_argv[0]) + "_dfu";
+
+		std::rename(firmwareFile.c_str(), newExe.c_str());
+
+		chmod(newExe.c_str(), S_IRWXU|S_IRWXG|S_IRWXO);
+
+		char * argv[] = {(char*)newExe.c_str(), nullptr};
+		char * envp[] = {nullptr};
+
+		auto ret = execve(newExe.c_str(), argv, m_envp);
+
+		std::cout << std::strerror(errno) << std::endl;
+
+		return ret != -1;
 	}
+
+private:
+	int m_argc;
+	char** m_argv;
+	char** m_envp;
 };
 }
 

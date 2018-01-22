@@ -29,6 +29,20 @@ public:
 				m_messageStatus = wolkabout::ActuatorStatus::State::ERROR;
 			}
 		}
+		else if(reference == "STATE")
+		{
+			if(value == "true")
+			{
+				m_toggle = true;
+			}
+			else
+			{
+				m_toggle = false;
+			}
+
+			m_toggleStatus = wolkabout::ActuatorStatus::State::BUSY;
+			emit toggle(m_toggle);
+		}
 	}
 
 	wolkabout::ActuatorStatus getActuatorStatus(const std::string& reference) override
@@ -37,12 +51,17 @@ public:
 		{
 			return wolkabout::ActuatorStatus(m_message, m_messageStatus);
 		}
+		else if(reference == "STATE")
+		{
+			return wolkabout::ActuatorStatus(m_toggle ? "true" : "false", m_toggleStatus);
+		}
 
 		return wolkabout::ActuatorStatus("", wolkabout::ActuatorStatus::State::READY);
 	}
 
 signals:
 	void message(std::string message);
+	void toggle(bool tog);
 
 	void statusUpdated(std::string ref, wolkabout::ActuatorStatus status);
 
@@ -61,9 +80,27 @@ public slots:
 		emit statusUpdated("MSG", {m_message, m_messageStatus});
 	}
 
+	void toggleSetSuccess(bool status, bool value)
+	{
+		if(status)
+		{
+			m_toggleStatus = wolkabout::ActuatorStatus::State::READY;
+		}
+		else
+		{
+			m_toggleStatus = wolkabout::ActuatorStatus::State::ERROR;
+		}
+
+		m_toggle = value;
+
+		emit statusUpdated("STATE", {m_toggle ? "true" : "false", m_toggleStatus});
+	}
+
 private:
 	std::atomic<wolkabout::ActuatorStatus::State> m_messageStatus;
 	std::string m_message;
+	std::atomic<wolkabout::ActuatorStatus::State> m_toggleStatus;
+	std::atomic_bool m_toggle;
 };
 
 }

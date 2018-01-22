@@ -26,7 +26,7 @@
    <string>Ready2Wash Changer</string>
   </property>
   <widget class="QWidget" name="centralWidget">
-   <layout class="QHBoxLayout" name="horizontalLayout">
+   <layout class="QVBoxLayout" name="verticalLayout">
     <item>
      <widget class="QPushButton" name="pushButton">
       <property name="sizePolicy">
@@ -48,11 +48,22 @@
         <bold>true</bold>
        </font>
       </property>
+      <property name="styleSheet">
+       <string notr="true">QPushButton {color:black; background-color: red;}
+QPushButton:checked {color:black; background-color: green;}</string>
+      </property>
       <property name="text">
        <string/>
       </property>
       <property name="checkable">
        <bool>true</bool>
+      </property>
+     </widget>
+    </item>
+    <item>
+     <widget class="QLabel" name="label">
+      <property name="text">
+       <string/>
       </property>
      </widget>
     </item>

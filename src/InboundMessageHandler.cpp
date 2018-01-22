@@ -48,7 +48,7 @@ InboundMessageHandler::InboundMessageHandler(Device device) :
 
 void InboundMessageHandler::messageReceived(const std::string& topic, const std::string& message)
 {
-	std::cout << "Message received: " << topic << ", " << message << std::endl;
+	//std::cout << "Message received: " << topic << ", " << message << std::endl;
 
 	if(StringUtils::startsWith(topic, ACTUATION_REQUEST_TOPIC_ROOT))
 	{

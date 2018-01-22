@@ -26,7 +26,7 @@ namespace wolkabout
 const unsigned short PahoMqttClient::MQTT_CONNECTION_COMPLETITION_TIMEOUT_MSEC = 2000;
 const unsigned short PahoMqttClient::MQTT_ACTION_COMPLETITION_TIMEOUT_MSEC = 2000;
 const unsigned short PahoMqttClient::MQTT_KEEP_ALIVE_SEC = 60;
-const unsigned short PahoMqttClient::MQTT_QOS = 2;
+const unsigned short PahoMqttClient::MQTT_QOS = 0;
 
 PahoMqttClient::PahoMqttClient() : m_isConnected(false), m_lastWillTopic(""), m_lastWillMessage("") {}
 
@@ -136,6 +136,8 @@ bool PahoMqttClient::publish(const std::string& topic, const std::string& messag
 
     try
     {
+		std::cout << "Sending message: " << message << ", " << topic << std::endl;
+
         mqtt::message_ptr pubmsg = mqtt::make_message(topic, message.c_str(), strlen(message.c_str()));
         pubmsg->set_qos(MQTT_QOS);
 

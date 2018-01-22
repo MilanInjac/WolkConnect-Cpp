@@ -20,6 +20,8 @@
 #include <qt5/QtCore/QObject>
 #include "MainWindow.h"
 #include "CustomHandler.h"
+#include "BasicFirmwareInstaller.h"
+#include "BasicUrlFileDownloader.h"
 
 #include <iostream>
 #include <memory>
@@ -27,10 +29,13 @@
 #include <thread>
 #include <string>
 
-int main(int argc, char** argv)
+int main(int argc, char** argv, char** envp)
 {
 	QApplication a(argc, argv);
-	MainWindow mainWindow;
+
+	const std::string firmwareVersion = "2.0.0";
+
+	MainWindow mainWindow{firmwareVersion};
 
 	qRegisterMetaType<std::string>("std::string");
 
@@ -45,21 +50,25 @@ int main(int argc, char** argv)
 
 	std::string message;
 	example::BasicConfigLoader::loadMessage("config", message);
-	std::cout << "message: " << message;
 
-	example::BasicConfigLoader::saveMessage("config", "new test message");
-
-	wolkabout::Device device(key, password, {"MSG"});
+	wolkabout::Device device(key, password, {"MSG", "STATE"});
 
 	auto customHandler = std::make_shared<example::CustomHandler>();
 	QObject::connect(customHandler.get(), &example::CustomHandler::message, &mainWindow, &MainWindow::setMessage);
 	QObject::connect(&mainWindow, &MainWindow::messageSet, customHandler.get(), &example::CustomHandler::messageSetSuccess);
+
+	QObject::connect(customHandler.get(), &example::CustomHandler::toggle, &mainWindow, &MainWindow::setToggle);
+	QObject::connect(&mainWindow, &MainWindow::toggleSet, customHandler.get(), &example::CustomHandler::toggleSetSuccess);
+
+	auto installer = std::make_shared<example::BasicFirmwareInstaller>(argc, argv, envp);
+	auto urlDownloader = std::make_shared<example::BasicUrlFileDownloader>();
 
     std::unique_ptr<wolkabout::Wolk> wolk =
       wolkabout::Wolk::newBuilder(device)
 		.actuationHandler(customHandler)
 		.actuatorStatusProvider(customHandler)
 		.host(host)
+		.withFirmwareUpdate(firmwareVersion, installer, ".", 100 * 1024 * 1024, urlDownloader)
         .build();
 
 	QObject::connect(customHandler.get(), &example::CustomHandler::statusUpdated, [&](std::string ref, wolkabout::ActuatorStatus status){
@@ -69,6 +78,7 @@ int main(int argc, char** argv)
 	wolk->connect();
 
 	customHandler->handleActuation("MSG", message);
+	customHandler->handleActuation("STATE", "true");
 
     wolk->addSensorReading("TEMPERATURE_REF", 23.4);
     wolk->addSensorReading("BOOL_SENSOR_REF", true);
